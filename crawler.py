@@ -9,31 +9,31 @@ import re
 class WebCrawler:
     def __init__(self, start_url, query, link_cap, num_of_threads):
         self.start_url = start_url
-        self.query = query
         self.query_location = None
         self.query_found = False
+        self.query = query
+        self.num_of_threads = num_of_threads
         self.links_queue = Queue()
         self.parser = 'html.parser'  # parser for beautiful soup
         self.link_cap = link_cap  # prevent crawler from running forever
         self.links_visited = 0
-        self.num_of_threads = num_of_threads
+        # Lock mechanism for synchronizing threads
         self._lock1 = threading.Lock()
         self._lock2 = threading.Lock()
+        self._l = lambda n: logging.info("thread %s acquired lock%d", threading.current_thread().getName(), n)
+        self._u = lambda n: logging.info("thread %s acquired lock%d", threading.current_thread().getName(), n)
 
-    def scrape(self):
-        if self.query_found or self.links_visited >= self.link_cap:
-            return
-
+    def scrape(self) -> None:
         # CRITICAL SECTION 1 #
         self._lock1.acquire()
-        logging.info("thread %s acquired lock1", threading.current_thread().getName())
+        self._l(1)
         if self.links_queue.empty():
             self._lock1.release()
-            logging.info("thread %s released lock1", threading.current_thread().getName())
+            self._u(2)
             return
         page_url = self.links_queue.get()
         self.links_visited += 1
-        logging.info("thread %s released lock1", threading.current_thread().getName())
+        self._u(1)
         self._lock1.release()
         # END OF CRITICAL SECTION 1 #
 
@@ -49,17 +49,17 @@ class WebCrawler:
             for link in soup.find_all(attrs={'href': re.compile("http")}):
                 # CRITICAL SECTION 2 #
                 self._lock2.acquire()
-                logging.info("thread %s acquired lock2", threading.current_thread().getName())
+                self._l(2)
                 self.links_queue.put(link.get('href'))
-                logging.info("thread %s released lock2", threading.current_thread().getName())
+                self._u(2)
                 self._lock2.release()
                 # END OF CRITICAL SECTION 2 #
 
-    def crawl(self):
+    def crawl(self) -> None:
         while not self.query_found and self.links_visited < self.link_cap:
             self.scrape()
 
-    def start(self):
+    def start(self) -> None:
         self.links_queue.put(self.start_url)
         for idx in range(self.num_of_threads):
             logging.info("WebCrawler:Create and start thread number %d", idx)
@@ -76,7 +76,7 @@ class WebCrawler:
             print('### SUCCESS! ###\nFound query at url',
                   self.query_location, "after visiting", self.links_visited, "links")
         else:
-            print('### FAILURE! ###\nCould not find query even after visitng',
+            print('### FAILURE! ###\nCould not find query even after visiting',
                   self.links_visited, "links")
 
 
