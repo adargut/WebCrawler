@@ -29,7 +29,7 @@ class WebCrawler:
         self._l(1)
         if self.links_queue.empty():
             self._lock1.release()
-            self._u(2)
+            self._u(1)
             return
         page_url = self.links_queue.get()
         self.links_visited += 1
@@ -95,6 +95,6 @@ def main():
 
 
 if __name__ == '__main__':
-    threads = list()
     logging.getLogger().setLevel(logging.INFO)
+    threads = list()
     main()
