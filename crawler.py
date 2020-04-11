@@ -69,14 +69,15 @@ class WebCrawler:
 
         for idx, thread in enumerate(threads):
             thread.join()
-            logging.info("WebCrawler:Collected rc from thread number %d", idx)
+            thread_to_str = "Thread-" + str(idx)
+            logging.info("WebCrawler:Main Thread Collected %s", thread_to_str)
 
         if self.query_found:
-            print('### SUCCESS! ###')
-            print("Found query at url", self.query_location, "after visiting", self.links_visited, "links")
+            print('### SUCCESS! ###\nFound query at url',
+                  self.query_location, "after visiting", self.links_visited, "links")
         else:
-            print('### FAILURE! ###')
-            print("Could not find query even after visitng", self.links_visited, "links")
+            print('### FAILURE! ###\nCould not find query even after visitng',
+                  self.links_visited, "links")
 
 
 def main():
@@ -84,7 +85,7 @@ def main():
     url = input()
     print("Desired query:")
     query = input()
-    print("Maximum number of links to visit in search of query:")
+    print("Desired cap on links to visit:")
     link_cap = int(input())
     print("Desired number of threads:")
     num_of_threads = int(input())
